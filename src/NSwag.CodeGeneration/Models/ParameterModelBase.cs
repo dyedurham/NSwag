@@ -160,6 +160,12 @@ namespace NSwag.CodeGeneration.Models
 
         /// <summary>Gets a value indicating whether the parameter is of type object.</summary>
         public bool IsBody => Kind == SwaggerParameterKind.Body;
+        
+        /// <summary>Gets a value indicating whether the parameter is from the path.</summary>
+        public bool IsPath => Kind == SwaggerParameterKind.Path;
+        
+        /// <summary>Gets a value indicating whether the parameter is from the header.</summary>
+        public bool IsHeader => Kind == SwaggerParameterKind.Header
 
         /// <summary>Gets the operation extension data.</summary>
         public IDictionary<string, object> ExtensionData => _parameter.ExtensionData;
