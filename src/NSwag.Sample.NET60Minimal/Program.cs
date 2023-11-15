@@ -20,12 +20,12 @@ var app = builder.Build();
 app.UseDeveloperExceptionPage();
 
 app.UseOpenApi();
-app.UseSwaggerUi3();
+app.UseSwaggerUi();
 
-app.MapGet("/", (Func<string>)(() => "Hello World!"))
+app.MapGet("/", () => "Hello World!")
     .WithTags("General");
 
-app.MapGet("/sum/{a}/{b}", (Func<int, int, int>)((a, b) => a + b))
+app.MapGet("/sum/{a}/{b}", (int a, int b) => a + b)
     .WithName("CalculateSum")
     .WithTags("Calculator");
 

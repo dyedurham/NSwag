@@ -19,15 +19,9 @@ using NSwag.CodeGeneration.CSharp;
 namespace NSwag.Commands.CodeGeneration
 {
     [Command(Name = "openapi2csclient", Description = "Generates CSharp client code from a Swagger/OpenAPI specification.")]
-    public class OpenApiToCSharpClientCommand : SwaggerToCSharpClientCommand
+    public class OpenApiToCSharpClientCommand : OpenApiToCSharpCommandBase<CSharpClientGeneratorSettings>
     {
-    }
-
-    [Command(Name = "swagger2csclient", Description = "Generates CSharp client code from a Swagger/OpenAPI specification (obsolete: use openapi2csclient instead).")]
-    [Obsolete("Use openapi2csclient instead.")]
-    public class SwaggerToCSharpClientCommand : OpenApiToCSharpCommandBase<CSharpClientGeneratorSettings>
-    {
-        public SwaggerToCSharpClientCommand() : base(new CSharpClientGeneratorSettings())
+        public OpenApiToCSharpClientCommand() : base(new CSharpClientGeneratorSettings())
         {
         }
 
@@ -184,6 +178,20 @@ namespace NSwag.Commands.CodeGeneration
             set { Settings.CSharpGeneratorSettings.TypeAccessModifier = value; }
         }
 
+        [Argument(Name = "PropertySetterAccessModifier", IsRequired = false, Description = "The access modifier of property setters (default: '').")]
+        public string PropertySetterAccessModifier
+        {
+            get { return Settings.CSharpGeneratorSettings.PropertySetterAccessModifier; }
+            set { Settings.CSharpGeneratorSettings.PropertySetterAccessModifier = value; }
+        }
+
+        [Argument(Name = "GenerateNativeRecords", IsRequired = false, Description = "Generate C# 9.0 record types instead of record-like classes (default: false).")]
+        public bool GenerateNativeRecords
+        {
+            get { return Settings.CSharpGeneratorSettings.GenerateNativeRecords; }
+            set { Settings.CSharpGeneratorSettings.GenerateNativeRecords = value; }
+        }
+
         [Argument(Name = "GenerateContractsOutput", IsRequired = false,
                   Description = "Specifies whether to generate contracts output (interface and models in a separate file set with the ContractsOutput parameter).")]
         public bool GenerateContractsOutput { get; set; }
@@ -228,7 +236,7 @@ namespace NSwag.Commands.CodeGeneration
         }
 
         [Argument(Name = "SerializeTypeInformation", IsRequired = false,
-            Description = "Serialize the type information in a $type property (not recommended, also sets TypeNameHandling = Auto, default: true).")]
+            Description = "Serialize the type information in a $type property (not recommended, also sets TypeNameHandling = Auto, default: false).")]
         public bool SerializeTypeInformation
         {
             get { return Settings.SerializeTypeInformation; }

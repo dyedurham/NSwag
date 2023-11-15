@@ -28,7 +28,7 @@ namespace NSwag.Sample.NETCore31
             services.AddOpenApiDocument(document =>
             {
                 document.Description = "Hello world!";
-                document.DefaultReferenceTypeNullHandling = ReferenceTypeNullHandling.NotNull;
+                document.SchemaSettings.DefaultReferenceTypeNullHandling = ReferenceTypeNullHandling.NotNull;
             });
         }
 
@@ -48,7 +48,7 @@ namespace NSwag.Sample.NETCore31
             });
 
             app.UseOpenApi();
-            app.UseSwaggerUi3();
+            app.UseSwaggerUi();
             //app.UseApimundo();
             app.UseApimundo(settings =>
             {

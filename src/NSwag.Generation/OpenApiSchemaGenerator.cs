@@ -21,7 +21,7 @@ namespace NSwag.Generation
 
         /// <summary>Initializes a new instance of the <see cref="OpenApiSchemaGenerator" /> class.</summary>
         /// <param name="settings">The settings.</param>
-        public OpenApiSchemaGenerator(OpenApiDocumentGeneratorSettings settings) : base(settings)
+        public OpenApiSchemaGenerator(OpenApiDocumentGeneratorSettings settings) : base(settings.SchemaSettings)
         {
         }
 
@@ -63,7 +63,7 @@ namespace NSwag.Generation
             JsonSchemaResolver schemaResolver, Action<TSchemaType, JsonSchema> transformation = null)
         {
             contextualType = GenericResultWrapperTypes.RemoveGenericWrapperTypes(
-                contextualType, t => t.TypeName, t => t.OriginalGenericArguments[0]);
+                contextualType, t => t.Name, t => t.OriginalGenericArguments[0]);
 
             if (IsFileResponse(contextualType))
             {
