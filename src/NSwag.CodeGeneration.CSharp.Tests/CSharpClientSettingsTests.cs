@@ -66,6 +66,30 @@ namespace NSwag.CodeGeneration.CSharp.Tests
         }
 
         [Fact]
+        public async Task WhenUsingBaseUrl_ButNoProperty_ThenPropertyIsNotUsedAndFieldIsGenerated()
+        {
+            // Arrange
+            var swaggerGenerator = new WebApiOpenApiDocumentGenerator(new WebApiOpenApiDocumentGeneratorSettings
+            {
+                SchemaSettings = new NewtonsoftJsonSchemaGeneratorSettings()
+            });
+
+            var document = await swaggerGenerator.GenerateForControllerAsync<FooController>();
+            var generator = new CSharpClientGenerator(document, new CSharpClientGeneratorSettings
+            {
+                UseBaseUrl = true,
+                GenerateBaseUrlProperty = false
+            });
+
+            // Act
+            var code = generator.GenerateFile();
+
+            // Assert
+            Assert.DoesNotContain("BaseUrl", code);
+            Assert.Contains("string _baseUrl", code);
+        }
+
+        [Fact]
         public async Task When_parameter_name_is_reserved_keyword_then_it_is_appended_with_at()
         {
             // Arrange
@@ -172,6 +196,58 @@ namespace NSwag.CodeGeneration.CSharp.Tests
 
             // Assert
             Assert.Contains("public partial interface IFooClient : IClientBase", code);
+        }
+
+        [Fact]
+        public async Task When_client_class_generation_is_enabled_and_suppressed_then_client_class_is_not_generated()
+        {
+            // Arrange
+            var swaggerGenerator = new WebApiOpenApiDocumentGenerator(new WebApiOpenApiDocumentGeneratorSettings
+            {
+                SchemaSettings = new NewtonsoftJsonSchemaGeneratorSettings()
+            });
+
+            var document = await swaggerGenerator.GenerateForControllerAsync<FooController>();
+            var generator = new CSharpClientGenerator(document, new CSharpClientGeneratorSettings
+            {
+                GenerateClientClasses = true,
+                SuppressClientClassesOutput = true,
+                GenerateClientInterfaces = true,
+                // SuppressClientInterfacesOutput = false, // default
+             });
+
+            // Act
+            var code = generator.GenerateFile();
+
+            // Assert
+            Assert.Contains("public partial interface IFooClient", code);
+            Assert.DoesNotContain("public partial class FooClient : IFooClient", code);
+        }
+
+        [Fact]
+        public async Task When_client_interface_generation_is_enabled_and_suppressed_then_client_interface_is_not_generated()
+        {
+            // Arrange
+            var swaggerGenerator = new WebApiOpenApiDocumentGenerator(new WebApiOpenApiDocumentGeneratorSettings
+            {
+                SchemaSettings = new NewtonsoftJsonSchemaGeneratorSettings()
+            });
+
+            var document = await swaggerGenerator.GenerateForControllerAsync<FooController>();
+            var generator = new CSharpClientGenerator(document, new CSharpClientGeneratorSettings
+            {
+                GenerateClientClasses = true,
+                // SuppressClientClassesOutput = false, // default
+                GenerateClientInterfaces = true,
+                SuppressClientInterfacesOutput = true,
+             });
+
+            // Act
+            var code = generator.GenerateFile();
+
+            // Assert
+            Assert.DoesNotContain("public partial interface IFooClient", code);
+            Assert.Contains("public partial class FooClient : IFooClient", code);
         }
     }
 }

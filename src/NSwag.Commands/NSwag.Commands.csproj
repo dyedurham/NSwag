@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net462;net6.0;net7.0</TargetFrameworks>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <TargetFrameworks>net462;net6.0;net7.0;net8.0</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- obsolete usage, missing comments -->
     <NoWarn>$(NoWarn),618,1591</NoWarn>
   </PropertyGroup>
@@ -31,6 +31,9 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <PackageReference Include="Microsoft.AspNetCore" Version="[2.1.7, 2.2)" />
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="[2.1.34, 2.2)" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel.Core" Version="[2.1.25, 2.2)" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets" Version="[2.1.40, 2.2)" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="[2.1.1, 2.2)" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.ApiExplorer" Version="[2.1.3, 2.2)" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Formatters.Json" Version="[2.1.18, 2.2)" />

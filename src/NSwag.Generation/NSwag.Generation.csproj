@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net462</TargetFrameworks>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- obsolete warning -->
     <NoWarn>$(NoWarn),618</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NJsonSchema.NewtonsoftJson" Version="11.0.0-preview006" />
+    <PackageReference Include="NJsonSchema.NewtonsoftJson" Version="11.0.0" />
   </ItemGroup>
 
   <ItemGroup>

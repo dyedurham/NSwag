@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>14.0.0</VersionPrefix>
+    <VersionPrefix>14.0.7</VersionPrefix>
 
     <Authors>Rico Suter</Authors>
     <Copyright>Copyright © Rico Suter, 2023</Copyright>
@@ -30,6 +30,8 @@
 
     <!-- reduce package size by only including english resources -->
     <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
+
+    <UseArtifactsOutput>true</UseArtifactsOutput>
 
   </PropertyGroup>
 

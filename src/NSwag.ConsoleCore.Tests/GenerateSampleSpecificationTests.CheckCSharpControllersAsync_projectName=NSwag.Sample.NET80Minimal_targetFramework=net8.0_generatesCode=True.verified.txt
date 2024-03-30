@@ -34,9 +34,6 @@ namespace MyNamespace
 
         System.Threading.Tasks.Task<int> AbsoluteValueAsync(int a);
 
-        /// <remarks>
-        /// Hello world!
-        /// </remarks>
 
         System.Threading.Tasks.Task<int> IdentityAsync(int id);
 
@@ -74,9 +71,6 @@ namespace MyNamespace
             return _implementation.AbsoluteValueAsync(a);
         }
 
-        /// <remarks>
-        /// Hello world!
-        /// </remarks>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("id:{id}")]
         public System.Threading.Tasks.Task<int> Identity(int id)
         {

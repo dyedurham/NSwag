@@ -23,7 +23,7 @@ public partial class Build
     Target Pack => _ => _
         .DependsOn(Compile)
         .After(Test)
-        .Produces(ArtifactsDirectory / "*.*")
+        .OnlyWhenDynamic(() => IsRunningOnWindows)
         .Executes(() =>
         {
             if (Configuration != Configuration.Release)
@@ -36,8 +36,6 @@ public partial class Build
             {
                 nugetVersion += "-" + VersionSuffix;
             }
-
-            ArtifactsDirectory.CreateOrCleanDirectory();
 
             // it seems to cause some headache with publishing, so let's dotnet pack only files we know are suitable
             var projects = SourceDirectory.GlobFiles("**/*.csproj")
@@ -129,6 +127,9 @@ public partial class Build
             // ZIP directories
             ZipFile.CreateFromDirectory(NSwagNpmBinaries, ArtifactsDirectory / "NSwag.Npm.zip");
             ZipFile.CreateFromDirectory(NSwagStudioBinaries, ArtifactsDirectory / "NSwag.zip");
+
+            // NSwagStudio.msi
+            CopyFileToDirectory(ArtifactsDirectory / "bin" / "NSwagStudio.Installer" / Configuration / "NSwagStudio.msi", ArtifactsDirectory);
         });
 }
 

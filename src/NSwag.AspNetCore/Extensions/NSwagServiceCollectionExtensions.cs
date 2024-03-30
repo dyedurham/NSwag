@@ -69,18 +69,25 @@ namespace Microsoft.Extensions.DependencyInjection
                 var settings = new AspNetCoreOpenApiDocumentGeneratorSettings();
 
                 var mvcOptions = services.GetRequiredService<IOptions<MvcOptions>>();
-                var newtonsoftSettings = AspNetCoreOpenApiDocumentGenerator.GetJsonSerializerSettings(services);
-                var systemTextJsonOptions = mvcOptions.Value.OutputFormatters
-                    .Any(f => f.GetType().Name == "SystemTextJsonOutputFormatter") ?
-                    AspNetCoreOpenApiDocumentGenerator.GetSystemTextJsonSettings(services) : null;
+                var hasSystemTextJsonOutputFormatter = mvcOptions.Value.OutputFormatters
+                    .Any(f => f.GetType().Name == "SystemTextJsonOutputFormatter");
 
-                if (systemTextJsonOptions != null)
-                {
-                    settings.ApplySettings(new SystemTextJsonSchemaGeneratorSettings { SerializerOptions = systemTextJsonOptions }, mvcOptions.Value);
-                }
-                else if (newtonsoftSettings != null)
+                var newtonsoftSettings = AspNetCoreOpenApiDocumentGenerator.GetJsonSerializerSettings(services);
+                var systemTextJsonOptions = hasSystemTextJsonOutputFormatter
+                    ? AspNetCoreOpenApiDocumentGenerator.GetSystemTextJsonSettings(services)
+#if NET6_0_OR_GREATER
+                    : services.GetService<IOptions<AspNetCore.Http.Json.JsonOptions>>()?.Value.SerializerOptions;
+#else 
+                    : null;
+#endif
+
+                if (newtonsoftSettings != null && !hasSystemTextJsonOutputFormatter)
                 {
                     settings.ApplySettings(new NewtonsoftJsonSchemaGeneratorSettings { SerializerSettings = newtonsoftSettings }, mvcOptions.Value);
+                } 
+                else if (systemTextJsonOptions != null)
+                {
+                    settings.ApplySettings(new SystemTextJsonSchemaGeneratorSettings { SerializerOptions = systemTextJsonOptions }, mvcOptions.Value);
                 }
                 else
                 {

@@ -2,8 +2,11 @@
 [System.CodeDom.Compiler.GeneratedCode("NSwag", "{{ ToolchainVersion }}")]
 {{ ClientClassAccessModifier }} partial class {{ Class }} {% if HasBaseType %}: {% endif %}{% if HasBaseClass %}{{ BaseClass }}{% if GenerateClientInterfaces %}, {% endif %}{% endif %}{% if GenerateClientInterfaces %}I{{ Class }}{% endif %}
 {
-{% if UseBaseUrl and GenerateBaseUrlProperty -%}
+{% if UseBaseUrl -%}
+    #pragma warning disable 8618
     private string _baseUrl;
+    #pragma warning restore 8618
+
 {% endif -%}
 {% if InjectHttpClient -%}
     private {{ HttpClientType }} _httpClient;
@@ -15,30 +18,53 @@
     private static System.Lazy<{{ JsonSerializerSettingsType }}> _settings = new System.Lazy<{{ JsonSerializerSettingsType }}>(CreateSerializerSettings, true);
 {% endif -%}
 
+{% assign constructorParameters = "" -%}
 {% if HasConfigurationClass -%}
-    public {{ Class }}({{ ConfigurationClass }} configuration{% if InjectHttpClient %}, {{ HttpClientType }} httpClient{% endif %}) : base(configuration)
-    {
-{%     if InjectHttpClient -%}
-        _httpClient = httpClient;
-{%     endif -%}
-{% elsif UseBaseUrl and HasBaseUrl == false %}
-    public {{ Class }}(string baseUrl{% if InjectHttpClient %}, {{ HttpClientType }} httpClient{% endif %})
-    {
-        BaseUrl = baseUrl;
-{%     if InjectHttpClient -%}
-        _httpClient = httpClient;
-{%     endif -%}
-{% elsif InjectHttpClient %}
-    public {{ Class }}({{ HttpClientType }} httpClient)
-    {
-        _httpClient = httpClient;
-{% else -%}
-    public {{ Class }}()
-    {
-{%     if UseBaseUrl and GenerateBaseUrlProperty -%}
-        BaseUrl = "{{ BaseUrl }}";
-{%     endif -%}
+{%     assign constructorParameters = ConfigurationClass | append: " configuration" -%}
 {% endif -%}
+{% if UseBaseUrl and HasBaseUrl == false and HasConfigurationClass == false -%}
+{%     unless constructorParameters == "" -%}{% assign constructorParameters = constructorParameters | append: ", " -%}{% endunless -%}
+{%     assign constructorParameters = constructorParameters | append: "string baseUrl" -%}
+{% endif -%}
+{% if InjectHttpClient -%}
+{%     unless constructorParameters == "" -%}{% assign constructorParameters = constructorParameters | append: ", " -%}{% endunless -%}
+{%     assign constructorParameters = constructorParameters | append: HttpClientType | append: " httpClient" -%}
+{% endif -%}
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    public {{ Class }}({{ constructorParameters }}){% if HasConfigurationClass and HasBaseClass -%}{{ " : base(configuration)"}}{% endif %}
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    {
+{%     if UseBaseUrl -%}
+{%         if HasBaseUrl -%}
+{%             if GenerateBaseUrlProperty -%}
+        BaseUrl = "{{ BaseUrl }}";
+{%             else -%}
+{%                 if BaseUrl != "" -%}
+{%                     assign baseUrlLength = BaseUrl | size -%}
+{%                     assign lastUrlCharIndex = baseUrlLength | minus: 1 -%}
+{%                     assign lastUrlChar = BaseUrl | slice: lastUrlCharIndex, 1 -%}
+{%                     if lastUrlChar == "/" -%}
+        _baseUrl = "{{ BaseUrl }}";
+{%                     else -%}
+        _baseUrl = "{{ BaseUrl }}/";
+{%                     endif -%}
+{%                 endif -%}
+{%             endif -%}
+{%         else -%}
+{%             if GenerateBaseUrlProperty -%}
+        BaseUrl = baseUrl;
+{%             else -%}
+{%                 if HasConfigurationClass == false -%}
+        _baseUrl = (string.IsNullOrEmpty(baseUrl) || baseUrl.EndsWith("/"))
+            ? baseUrl
+            : baseUrl + "/";
+{%                 endif -%}
+{%             endif -%}
+{%         endif -%}
+{%     endif -%}
+{%     if InjectHttpClient -%}
+        _httpClient = httpClient;
+{%     endif -%}
     {% template Client.Class.Constructor %}
     }
 
@@ -264,53 +290,64 @@
 {%     endif -%}
 
                 var urlBuilder_ = new System.Text.StringBuilder();
-                {% if UseBaseUrl %}if (!string.IsNullOrEmpty(BaseUrl)) urlBuilder_.Append(BaseUrl);{% endif %}
-{%     assign pathParts = operation.Path | split: "/" -%}
-{%     unless operation.Path == "" -%}
-{%         for pathPart in pathParts -%}
-{%             assign pathPartLength = pathPart | size -%}
-{%             unless pathPartLength == 0 -%}
-{%                 assign firstPathPartChar = pathPart | slice: 0 -%}
-{%                 assign lastPathPartChar = pathPart | slice: -1 -%}
-{%                 if firstPathPartChar == "{" and lastPathPartChar == "}" -%}
-{%                     assign pathParameterPartLength = pathPartLength | minus: 2 -%}
-{%                     assign pathParameterPart = pathPart | slice: 1, pathParameterPartLength -%}
-{%                     for parameter in operation.PathParameters -%}
-{%                         if parameter.Name == pathParameterPart -%}
-{%                             if parameter.IsOptional -%}
-        if ({{ parameter.VariableName }} != null)
-        {
-            {% template Client.Class.PathParameter %}
-        }
-        else
-            if (urlBuilder_.Length > 0) urlBuilder_.Length--;
-{%                         else -%}
+                {% if UseBaseUrl %}if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);{% endif %}
+                // Operation Path: "{{ operation.Path }}"
+{%     if operation.Path contains "{" -%}
+{%        assign pathParts = operation.Path | split: "{" -%}
+{%        for pathPart in pathParts -%}
+{%            if pathPart contains "}" -%}
+{%                assign pathParameterParts = pathPart | split: "}" -%}
+{%                assign pathParameterFound = true -%}
+{%                for parameter in operation.PathParameters -%}
+{%                    if parameter.Name == pathParameterParts[0] -%}
+{%                        if parameter.IsOptional -%}
+{%                            assign pathParameterFound = false -%}
+                if ({{ parameter.VariableName }} != null)
+                {
+                    {% template Client.Class.PathParameter %}
+                }
+                else
+                    if (urlBuilder_.Length > 0) urlBuilder_.Length--;
+{%                        else -%}
                 {% template Client.Class.PathParameter %}
-{%                             endif -%}
-{%                         endif -%}
-{%                     endfor -%}
-{%                 else -%}
+{%                        endif -%}
+{%                    endif -%}
+{%                endfor -%}
+{%                comment -%} >>> just in case {% endcomment -%}
+{%                unless pathParameterFound -%}
+                urlBuilder_.Append("{{ '{' }}{{ pathParameterParts[0] }}{{ '}' }}");
+{%                endunless -%}
+{%                comment -%} <<< just in case {% endcomment -%}
+{%                assign nonParameterPartLengh = pathParameterParts[1] | size -%}
+{%                if nonParameterPartLengh == 1 -%}
+                urlBuilder_.Append('{{ pathParameterParts[1] }}');
+{%                elsif nonParameterPartLengh > 0 -%}
+                urlBuilder_.Append("{{ pathParameterParts[1] }}");
+{%                endif -%}
+{%            else -%}
+{%                 unless pathPart == "" -%}
                 urlBuilder_.Append("{{ pathPart }}");
-{%                 endif -%}
-{%                 if forloop.last == false -%}
-                urlBuilder_.Append('/');
-{%                 endif -%}
-{%             endunless -%}
-{%         endfor -%}
-{%     endunless -%}
+{%                 endunless -%}
+{%            endif -%}
+{%        endfor -%}
+{%    else -%}
+{%        unless operation.Path == "" -%}
+                urlBuilder_.Append("{{ operation.Path }}");
+{%        endunless -%}
+{%    endif -%}
 {%     if operation.HasQueryParameters -%}
-        urlBuilder_.Append('?');
+                urlBuilder_.Append('?');
 {%         for parameter in operation.QueryParameters -%}
 {%             if parameter.IsOptional -%}
-        if ({{ parameter.VariableName }} != null)
-        {
-            {% template Client.Class.QueryParameter %}
-        }
+                if ({{ parameter.VariableName }} != null)
+                {
+                    {% template Client.Class.QueryParameter %}
+                }
 {%             else -%}
-        {% template Client.Class.QueryParameter %}
+                {% template Client.Class.QueryParameter %}
 {%             endif -%}
 {%         endfor -%}
-        urlBuilder_.Length--;
+                urlBuilder_.Length--;
 {%     endif -%}
 
 {% if GeneratePrepareRequestAndProcessResponseAsAsyncMethods %}
@@ -333,7 +370,9 @@
                 var disposeResponse_ = true;
                 try
                 {
-                    var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                    var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                    foreach (var item_ in response_.Headers)
+                        headers_[item_.Key] = item_.Value;
                     if (response_.Content != null && response_.Content.Headers != null)
                     {
                         foreach (var item_ in response_.Content.Headers)

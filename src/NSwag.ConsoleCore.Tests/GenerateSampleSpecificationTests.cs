@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VerifyXunit;
 using Xunit;
@@ -15,20 +14,23 @@ namespace NSwag.ConsoleCore.Tests
         [InlineData("NSwag.Sample.NET60Minimal", "net6.0", false)]
         [InlineData("NSwag.Sample.NET70", "net7.0", false)]
         [InlineData("NSwag.Sample.NET70Minimal", "net7.0", true)]
+        [InlineData("NSwag.Sample.NET80", "net8.0", false)]
+        [InlineData("NSwag.Sample.NET80Minimal", "net8.0", true)]
         public async Task Should_generate_openapi_for_project(string projectName, string targetFramework, bool generatesCode)
         {
             // Arrange
 #if DEBUG
-            var executablePath = $"../../../../NSwag.ConsoleCore/bin/Debug/{targetFramework}/dotnet-nswag.dll";
+            const string configuration = "debug";
 #else
-            var executablePath = $"../../../../NSwag.ConsoleCore/bin/Release/{targetFramework}/dotnet-nswag.dll";
+            const string configuration = "release";
 #endif
-            var nswagJsonPath = $"../../../../{projectName}/nswag.json";
-            var openApiJsonPath = $"../../../../{projectName}/openapi.json";
+            var executablePath = Path.GetFullPath($"../../../../artifacts/bin/NSwag.ConsoleCore/{configuration}_{targetFramework}/dotnet-nswag.dll");
+            var nswagJsonPath = Path.GetFullPath($"../../../../src/{projectName}/nswag.json");
+            var openApiJsonPath = Path.GetFullPath($"../../../../src/{projectName}/openapi.json");
 
-            var generatedClientsCsPath = $"../../../../{projectName}/GeneratedClientsCs.gen";
-            var generatedClientsTsPath = $"../../../../{projectName}/GeneratedClientsTs.gen";
-            var generatedControllersCsPath = $"../../../../{projectName}/GeneratedControllersCs.gen";
+            var generatedClientsCsPath = Path.GetFullPath($"../../../../src/{projectName}/GeneratedClientsCs.gen");
+            var generatedClientsTsPath = Path.GetFullPath($"../../../../src/{projectName}/GeneratedClientsTs.gen");
+            var generatedControllersCsPath = Path.GetFullPath($"../../../../src/{projectName}/GeneratedControllersCs.gen");
 
             File.Delete(openApiJsonPath);
             File.Delete(generatedClientsTsPath);
@@ -42,6 +44,12 @@ namespace NSwag.ConsoleCore.Tests
                 FileName = "dotnet",
                 Arguments = executablePath + " run " + nswagJsonPath,
                 CreateNoWindow = true,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+                Environment =
+                {
+                    { "NSWAG_NOVERSION", "true" }
+                }
             });
 
             try
@@ -54,10 +62,14 @@ namespace NSwag.ConsoleCore.Tests
             }
 
             // Assert
-            Assert.Equal(0, process.ExitCode);
+            if (process.ExitCode != 0)
+            {
+                var output = await process.StandardOutput.ReadToEndAsync();
+                var error = await process.StandardError.ReadToEndAsync();
+                Assert.Fail(output + error);
+            }
 
-            var json = File.ReadAllText(openApiJsonPath);
-            json = Regex.Replace(json, "\"NSwag v.*\"", "\"NSwag\"");
+            var json = await File.ReadAllTextAsync(openApiJsonPath);
             await Verifier.Verify(json).UseParameters(projectName, targetFramework, generatesCode);
 
             if (generatesCode)
@@ -70,22 +82,19 @@ namespace NSwag.ConsoleCore.Tests
 
         private static async Task CheckCSharpControllersAsync(string projectName, string targetFramework, bool generatesCode, string generatedControllersCsPath)
         {
-            var code = File.ReadAllText(generatedControllersCsPath);
-            code = Regex.Replace(code, "NSwag v.*\\)", "NSwag");
+            var code = await File.ReadAllTextAsync(generatedControllersCsPath);
             await Verifier.Verify(code).UseMethodName(nameof(CheckCSharpControllersAsync)).UseParameters(projectName, targetFramework, generatesCode);
         }
 
         private static async Task CheckCSharpClientsAsync(string projectName, string targetFramework, bool generatesCode, string generatedClientsCsPath)
         {
-            var code = File.ReadAllText(generatedClientsCsPath);
-            code = Regex.Replace(code, "NSwag v.*\\)", "NSwag");
+            var code = await File.ReadAllTextAsync(generatedClientsCsPath);
             await Verifier.Verify(code).UseMethodName(nameof(CheckCSharpClientsAsync)).UseParameters(projectName, targetFramework, generatesCode);
         }
 
         private static async Task CheckTypeScriptAsync(string projectName, string targetFramework, bool generatesCode, string generatedClientsTsPath)
         {
-            var code = File.ReadAllText(generatedClientsTsPath);
-            code = Regex.Replace(code, "NSwag v.*\\)", "NSwag");
+            var code = await File.ReadAllTextAsync(generatedClientsTsPath);
             await Verifier.Verify(code).UseMethodName(nameof(CheckTypeScriptAsync)).UseParameters(projectName, targetFramework, generatesCode);
         }
     }
